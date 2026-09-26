@@ -139,13 +139,12 @@ protected:
 
     /**
      * Parse a devicespec into a URL and instantiate the matching protocol.
-     * On success, `protocol` is set and true is returned, with url_out
-     * holding the parsed URL (borrow it -- don't let it outlive protocol).
-     * On failure, `protocol` is left null and false is returned; the
-     * caller signals the bus error.
+     * On success, `protocol` is set, with url_out holding the parsed URL
+     * (borrow it -- don't let it outlive protocol). On failure, `protocol`
+     * is left null and an error is returned; the caller signals the bus error.
      */
-    bool parse_and_instantiate_protocol(std::string &deviceSpec, bool is_dir,
-                                        std::unique_ptr<PeoplesUrlParser> &url_out);
+    error_is_true parse_and_instantiate_protocol(std::string &deviceSpec, bool is_dir,
+                                                 std::unique_ptr<PeoplesUrlParser> &url_out);
 
     void fujidev_set_login(const FUJI_COMMAND_PACKET &packet);
     void fujidev_set_password(const FUJI_COMMAND_PACKET &packet);

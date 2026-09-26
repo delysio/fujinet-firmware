@@ -144,7 +144,7 @@ void NDevice::fujidev_open(const FUJI_COMMAND_PACKET &packet)
     _protocol = nullptr;
     _parser = nullptr;
 
-    if (!parse_and_instantiate_protocol(spec, IS_DIR_MODE(access), urlParser))
+    if (parse_and_instantiate_protocol(spec, IS_DIR_MODE(access), urlParser).is_error())
     {
         _parser = std::make_unique<NErrorParser>(urlParser->isValidUrl()
                                                  ? NDEV_STATUS::GENERAL
@@ -451,8 +451,8 @@ void NDevice::fujidev_set_query(const FUJI_COMMAND_PACKET &packet)
     SYSTEM_BUS.transaction_success();
 }
 
-bool NDevice::parse_and_instantiate_protocol(std::string &deviceSpec, bool is_dir,
-                                             std::unique_ptr<PeoplesUrlParser> &url_out)
+error_is_true NDevice::parse_and_instantiate_protocol(std::string &deviceSpec, bool is_dir,
+                                                      std::unique_ptr<PeoplesUrlParser> &url_out)
 {
     deviceSpec = util_devicespec_fix_for_parsing(deviceSpec, prefix, is_dir, true);
     url_out = PeoplesUrlParser::parseURL(deviceSpec);
@@ -462,7 +462,7 @@ bool NDevice::parse_and_instantiate_protocol(std::string &deviceSpec, bool is_di
         Debug_printf("Invalid devicespec: >%s<\n", deviceSpec.c_str());
         _protocol = nullptr;
         _parser = nullptr;
-        return false;
+        RETURN_ERROR_AS_TRUE();
     }
 
 #ifdef VERBOSE_PROTOCOL
@@ -476,13 +476,13 @@ bool NDevice::parse_and_instantiate_protocol(std::string &deviceSpec, bool is_di
         Debug_printf("Could not open protocol. spec: >%s<, url: >%s<\n", deviceSpec.c_str(), url_out->mRawUrl.c_str());
         // The old parser, if any, pointed at the protocol just replaced.
         _parser = nullptr;
-        return false;
+        RETURN_ERROR_AS_TRUE();
     }
 
     _protocol->native_eol = network_eol();
 
     Debug_printf("NDevice::parse_and_instantiate_protocol() - Protocol %s created.\n", url_out->scheme.c_str());
-    return true;
+    RETURN_SUCCESS_AS_FALSE();
 }
 
 void NDevice::fujidev_set_login(const FUJI_COMMAND_PACKET &packet)
@@ -691,7 +691,7 @@ void NDevice::fs_op(const FUJI_COMMAND_PACKET &packet, fujiError_t (NetworkProto
     spec.resize(strlen(spec.c_str()));
 
     std::unique_ptr<PeoplesUrlParser> url;
-    if (!parse_and_instantiate_protocol(spec, IS_DIR_MODE(mode), url))
+    if (parse_and_instantiate_protocol(spec, IS_DIR_MODE(mode), url).is_error())
     {
         SYSTEM_BUS.transaction_error();
         return;
